@@ -178,3 +178,26 @@ func (d *Device) NetworkStatus() (NetworkStatus, error) {
 
 	return resp.NetworkStatus, nil
 }
+
+type Location struct {
+	ID               string
+	Name             string
+	Zones            map[string]bool `json:"zone_list"`
+	StereoPairStatus string
+}
+
+// Location returns information about device location
+func (d *Device) Location() (Location, error) {
+
+	var resp struct {
+		ResponseCode int `json:"response_code"`
+		Location
+	}
+
+	err := unmarshalHTTPResp(http.MethodGet, d.ControlURL+"system/getLocationInfo", &resp)
+	if err != nil {
+		return Location{}, err
+	}
+
+	return resp.Location, nil
+}

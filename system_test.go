@@ -231,3 +231,28 @@ func TestDeviceNetworkStatus(t *testing.T) {
 		t.Errorf("Unexpected values in marshalled response\n\n exp: %+v\n got: %+v\n", expected, stat)
 	}
 }
+
+func TestDeviceLocation(t *testing.T) {
+
+	d := mcast.Device{
+		ControlURL: testServer.URL + "/YamahaExtendedControl/v1/",
+	}
+
+	loc, err := d.Location()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := mcast.Location{
+		ID:   "e9fa55dd829348e0bc3a37cc67597f5c",
+		Name: "Home",
+		Zones: map[string]bool{
+			"main":  true,
+			"zone2": false,
+		},
+	}
+
+	if !reflect.DeepEqual(loc, expected) {
+		t.Errorf("Unexpected values in marshalled response\n\n exp: %+v\n got: %+v\n", expected, loc)
+	}
+}
