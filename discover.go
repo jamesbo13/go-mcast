@@ -5,13 +5,32 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"strings"
 
-	"github.com/koron/go-ssdp"
+	ssdp "github.com/koron/go-ssdp"
 )
 
 const (
+	yamahaMfr   = "Yamaha Corporation"
 	upnpDevName = "urn:schemas-upnp-org:device:MediaRenderer:1"
+
+	yamahaExtendedControlService = "urn:schemas-yamaha-com:service:X_YamahaExtendedControl:1"
 )
+
+// Device is a remotely controllable MusicCast device
+// (eg. speaker or A/V receiver)
+type Device struct {
+	Name         string
+	Manufacturer string
+	ModelName    string
+	ModelDesc    string
+	Address      string
+	ControlURL   string
+	UDN          string
+	SerialNum    string // Same as SystemID in DeviceInfo
+	YXCVersion   string
+}
 
 // Internal types for decoding XML description file
 
@@ -51,51 +70,103 @@ type device struct {
 	YamahaServices []yamahaService `xml:"urn:schemas-yamaha-com:device-1-0 X_device>X_serviceList>X_service"`
 }
 
-func deviceInfo(url string) error {
+func deviceInfo(urlStr string) (Device, error) {
 
-	resp, err := http.Get(url)
+	var d Device
+	var xmlDevice device
+
+	resp, err := http.Get(urlStr)
 	if err != nil {
-		return err
+		return d, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("HTTP error: %s", resp.Status)
+		return d, fmt.Errorf("HTTP error: %s", resp.Status)
 	}
 
 	xmlDoc, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return d, err
 	}
 
-	var xmlDev device
-
-	err = xml.Unmarshal(xmlDoc, &xmlDev)
+	err = xml.Unmarshal(xmlDoc, &xmlDevice)
 	if err != nil {
-		return err
+		return d, err
 	}
 
-	fmt.Printf("device: %+v\n", xmlDev)
+	// Per YXC documentation, after searching for MediaRenderer
+	// verify the following from devices description:
+	//	1. manufacturer = "Yamaha Corporation"
+	//	2. yamaha:X_device tag exists
 
-	return nil
+	if xmlDevice.Manufacturer != yamahaMfr || xmlDevice.YamahaBaseURL == "" {
+		return d, fmt.Errorf("unsupported device")
+	}
+
+	// Generate an exportable Device struct from internal device type
+	d = Device{
+		Name:         xmlDevice.Name,
+		Manufacturer: xmlDevice.Manufacturer,
+		ModelName:    xmlDevice.ModelName,
+		ModelDesc:    xmlDevice.ModelDesc,
+		UDN:          xmlDevice.UDN,
+		SerialNum:    xmlDevice.SerialNum,
+	}
+
+	// Extract host address from base URL
+	uri, err := url.Parse(xmlDevice.YamahaBaseURL)
+	if err != nil {
+		return d, fmt.Errorf("could not parse URL")
+	}
+
+	d.Address = uri.Hostname()
+
+	// Find extended control service definition
+	for _, s := range xmlDevice.YamahaServices {
+		if s.SpecType != yamahaExtendedControlService {
+			continue
+		}
+
+		if s.YXCControlURL != "" {
+			// FIXME - this adds a duplicate / in the middle
+			if s.YXCControlURL[0] == '/' {
+				d.ControlURL = xmlDevice.YamahaBaseURL + s.YXCControlURL[1:]
+			} else {
+				d.ControlURL = xmlDevice.YamahaBaseURL + s.YXCControlURL
+			}
+		}
+
+		d.YXCVersion = strings.TrimSpace(s.YXCVersion)
+		break
+	}
+
+	return d, nil
 }
 
 // Discover returns all MusicCast devices that can be found on local network.
 // Uses SSDP (Simple Service Discovery Protocol) to find appropriate hosts
-func Discover() error {
+func Discover() ([]Device, error) {
+
+	var ret []Device
 
 	devs, err := ssdp.Search(upnpDevName, 2, "")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	for i, srv := range devs {
-		fmt.Printf("%d: %s %s\n", i, srv.Type, srv.Location)
-		err = deviceInfo(srv.Location)
+	for _, srv := range devs {
+		// Fetch desc.xml from srv.Location and parse into device
+		d, err := deviceInfo(srv.Location)
 		if err != nil {
-			return err
+			continue
 		}
+
+		ret = append(ret, d)
+
 	}
 
-	return nil
+	//fmt.Printf("devs: %+v\n", ret)
+
+	return ret, nil
 }
