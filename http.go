@@ -7,9 +7,14 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"time"
 )
 
 // Helper functions for accessing device REST API
+
+var defaultClient = &http.Client{
+	Timeout: time.Second * 5,
+}
 
 // responseError maps errors returned in JSON response_code field to defined messages
 type responseError uint8
@@ -64,8 +69,7 @@ func unmarshalHTTPResp(method, url string, val interface{}) error {
 
 	//fmt.Printf("req: %+v\n", req)
 
-	// TODO: use shared global client
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := defaultClient.Do(req)
 	if err != nil {
 		return err
 	}
