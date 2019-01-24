@@ -1,10 +1,6 @@
 package mcast
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -22,12 +18,6 @@ type DeviceInfo struct {
 	CategoryCode      int     `json:"category_code"`
 	OperationMode     string  `json:"operation_mode"`
 	UpdateErrorCode   string  `json:"update_error_code"`
-}
-
-// Internal type for decoding responses to getDeviceInfo
-type jsonGetDeviceInfoResp struct {
-	ResponseCode uint `json:"response_code"`
-	DeviceInfo
 }
 
 type Input struct {
@@ -101,64 +91,17 @@ type Features struct {
 	Zones        []Zone `json:"zone"`
 }
 
-// Internal type for decoding responses to getFeatures
-type jsonGetFeaturesResp struct {
-	ResponseCode uint `json:"response_code"`
-	Features
-}
-
-// General method for handling JSON responses to HTTP requests
-func unmarshalHTTPResp(method, url string, val interface{}) error {
-
-	if url == "" {
-		return errors.New("missing url")
-	}
-
-	req, err := http.NewRequest(method, url, nil)
-	if err != nil {
-		return err
-	}
-
-	//fmt.Printf("req: %+v\n", req)
-
-	// TODO: use shared global client
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return errors.New("unexpected HTTP status: " + resp.Status)
-	}
-
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(b, &val)
-	if err != nil {
-		return err
-	}
-
-	return nil
-
-}
-
 // Info returns DeviceInfo for given Device
 func (d *Device) Info() (DeviceInfo, error) {
 
-	var resp jsonGetDeviceInfoResp
+	var resp struct {
+		ResponseCode int `json:"response_code"`
+		DeviceInfo
+	}
 
 	err := unmarshalHTTPResp(http.MethodGet, d.ControlURL+"system/getDeviceInfo", &resp)
 	if err != nil {
 		return DeviceInfo{}, err
-	}
-
-	// TODO: Ideally this should be common code in above function call
-	if resp.ResponseCode != 0 {
-		return DeviceInfo{}, fmt.Errorf("unexpected response code: %d", resp.ResponseCode)
 	}
 
 	// TODO: strip spaces from NetModuleVersion ?
@@ -168,16 +111,14 @@ func (d *Device) Info() (DeviceInfo, error) {
 
 func (d *Device) Features() (Features, error) {
 
-	var resp jsonGetFeaturesResp
+	var resp struct {
+		ResponseCode int `json:"response_code"`
+		Features
+	}
 
 	err := unmarshalHTTPResp(http.MethodGet, d.ControlURL+"system/getFeatures", &resp)
 	if err != nil {
 		return Features{}, err
-	}
-
-	// TODO: Ideally this should be common code in above function call
-	if resp.ResponseCode != 0 {
-		return Features{}, fmt.Errorf("unexpected response code: %d", resp.ResponseCode)
 	}
 
 	return resp.Features, nil
