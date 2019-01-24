@@ -184,3 +184,50 @@ func TestDeviceFeatures(t *testing.T) {
 		t.Errorf("Unexpected values in marshalled response\n\n exp: %+v\n got: %+v\n", expected, f)
 	}
 }
+
+func TestDeviceNetworkStatus(t *testing.T) {
+
+	d := mcast.Device{
+		ControlURL: testServer.URL + "/YamahaExtendedControl/v1/",
+	}
+
+	stat, err := d.NetworkStatus()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := mcast.NetworkStatus{
+		Name:           "Living Room",
+		Connection:     "wired_lan",
+		DHCP:           true,
+		IPAddress:      "10.13.1.134",
+		SubnetMask:     "255.255.255.0",
+		DefaultGateway: "10.13.1.1",
+		DNSServer1:     "10.13.1.1",
+		DNSServer2:     "0.0.0.0",
+		WirelessLAN: mcast.WirelessNet{
+			SSID:     "Ferrari-2.4",
+			Type:     "wpa2-psk(aes)",
+			Key:      "",
+			Enable:   true,
+			Chan:     0,
+			Strength: 0,
+		},
+		MACAddress: map[string]string{
+			"wireless_lan":    "946AB03A61CC",
+			"wired_lan":       "946AB03A61CB",
+			"wireless_direct": "946AB03A61CC",
+		},
+		AirplayPIN: "",
+		MusicCastNet: mcast.MusicCastNet{
+			Ready:      true,
+			DeviceType: "standard",
+			NumClients: 0,
+			Chan:       0,
+		},
+	}
+
+	if !reflect.DeepEqual(stat, expected) {
+		t.Errorf("Unexpected values in marshalled response\n\n exp: %+v\n got: %+v\n", expected, stat)
+	}
+}

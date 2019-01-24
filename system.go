@@ -20,6 +20,24 @@ type DeviceInfo struct {
 	UpdateErrorCode   string  `json:"update_error_code"`
 }
 
+// Info returns DeviceInfo for given Device
+func (d *Device) Info() (DeviceInfo, error) {
+
+	var resp struct {
+		ResponseCode int `json:"response_code"`
+		DeviceInfo
+	}
+
+	err := unmarshalHTTPResp(http.MethodGet, d.ControlURL+"system/getDeviceInfo", &resp)
+	if err != nil {
+		return DeviceInfo{}, err
+	}
+
+	// TODO: strip spaces from NetModuleVersion ?
+
+	return resp.DeviceInfo, nil
+}
+
 type Input struct {
 	ID            string
 	DistEnable    bool   `json:"distribution_enable"`
@@ -91,24 +109,7 @@ type Features struct {
 	Zones        []Zone `json:"zone"`
 }
 
-// Info returns DeviceInfo for given Device
-func (d *Device) Info() (DeviceInfo, error) {
-
-	var resp struct {
-		ResponseCode int `json:"response_code"`
-		DeviceInfo
-	}
-
-	err := unmarshalHTTPResp(http.MethodGet, d.ControlURL+"system/getDeviceInfo", &resp)
-	if err != nil {
-		return DeviceInfo{}, err
-	}
-
-	// TODO: strip spaces from NetModuleVersion ?
-
-	return resp.DeviceInfo, nil
-}
-
+// Features returns Features struct for given Device
 func (d *Device) Features() (Features, error) {
 
 	var resp struct {
@@ -122,4 +123,58 @@ func (d *Device) Features() (Features, error) {
 	}
 
 	return resp.Features, nil
+}
+
+type WirelessNet struct {
+	SSID     string
+	Type     string
+	Key      string
+	Enable   bool
+	Chan     int `json:"ch"`
+	Strength int
+}
+
+type MusicCastNet struct {
+	Ready       bool
+	DeviceType  string `json:"device_type"`
+	NumClients  int    `json:"child_num"`
+	Chan        int    `json:"ch"`
+	InitialJoin bool   `json:"initial_join_running"`
+	// TODO: DFS object (undocumented)
+	WLANChan int `json:"wlan_chan_1"`
+}
+
+type NetworkStatus struct {
+	Name           string `json:"network_name"`
+	Connection     string
+	DHCP           bool
+	IPAddress      string            `json:"ip_address"`
+	SubnetMask     string            `json:"subnet_mask"`
+	DefaultGateway string            `json:"default_gateway"`
+	DNSServer1     string            `json:"dns_server_1"`
+	DNSServer2     string            `json:"dns_server_2"`
+	WirelessLAN    WirelessNet       `json:"wireless_lan"`
+	WirelessDirect WirelessNet       `json:"wireless_direct"`
+	MACAddress     map[string]string `json:"mac_address"`
+
+	AirplayPIN string `json:"airplay_pin"`
+	VTunerID   string `json:"vtuner_id"`
+
+	MusicCastNet MusicCastNet `json:"musiccast_network"`
+}
+
+// NetworkStatus returns configuration information about device network(s)
+func (d *Device) NetworkStatus() (NetworkStatus, error) {
+
+	var resp struct {
+		ResponseCode int `json:"response_code"`
+		NetworkStatus
+	}
+
+	err := unmarshalHTTPResp(http.MethodGet, d.ControlURL+"system/getNetworkStatus", &resp)
+	if err != nil {
+		return NetworkStatus{}, err
+	}
+
+	return resp.NetworkStatus, nil
 }
