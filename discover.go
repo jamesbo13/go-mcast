@@ -18,20 +18,6 @@ const (
 	yamahaExtendedControlService = "urn:schemas-yamaha-com:service:X_YamahaExtendedControl:1"
 )
 
-// Device is a remotely controllable MusicCast device
-// (eg. speaker or A/V receiver)
-type Device struct {
-	Name         string
-	Manufacturer string
-	ModelName    string
-	ModelDesc    string
-	Address      string
-	ControlURL   string
-	UDN          string
-	SerialNum    string // Same as SystemID in DeviceInfo
-	YXCVersion   string
-}
-
 // Internal types for decoding XML description file
 
 type yamahaService struct {
@@ -75,6 +61,7 @@ func deviceInfo(urlStr string) (Device, error) {
 	var d Device
 	var xmlDevice device
 
+	// TODO: use client with timeout
 	resp, err := http.Get(urlStr)
 	if err != nil {
 		return d, err
