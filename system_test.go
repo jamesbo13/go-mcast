@@ -35,7 +35,7 @@ func TestDeviceInfo(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(info, expected) {
-		t.Errorf("Unexpected values in response\n")
+		t.Errorf("Unexpected values in marshalled response\n\n exp: %+v\n got: %+v\n", expected, info)
 	}
 }
 
