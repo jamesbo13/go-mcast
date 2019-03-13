@@ -150,10 +150,7 @@ func Discover() ([]Device, error) {
 		}
 
 		ret = append(ret, d)
-
 	}
-
-	//fmt.Printf("devs: %+v\n", ret)
 
 	return ret, nil
 }
