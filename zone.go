@@ -140,4 +140,19 @@ func (z Zone) SetVolumeIncr(step int) error {
 
 	return z.GetRequest("setVolume?volume=%s&step=%d", nil, dir, step)
 }
+
+func (z Zone) SetPower(enable bool) error {
+	var val string
+
+	if enable {
+		val = "on"
+	} else {
+		val = "standby"
+	}
+
+	return z.GetRequest("setPower?power=%s", nil, val)
+}
+
+func (z Zone) TogglePower() error {
+	return z.GetRequest("setPower?power=toggle", nil)
 }
