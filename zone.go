@@ -1,6 +1,6 @@
 package mcast
 
-import "net/http"
+import "errors"
 
 type VolumeStatus struct {
 	Mode  string
@@ -60,13 +60,13 @@ func (d Device) Zone(name string) (Zone, error) {
 	// TODO: Check if name is valid for given device
 
 	return Zone{name: name, dev: &d}, nil
-	}
+}
 
 // SendRequest is a helper function for sending requests to the Zone API.
 // See Device.SendRequest() for additional information
 func (z Zone) SendRequest(path string, val interface{}, args ...interface{}) error {
 	return z.dev.SendRequest(z.name+"/"+path, val, args...)
-	}
+}
 
 // Status returns the current status of the zone
 func (z Zone) Status() (ZoneStatus, error) {
@@ -90,4 +90,53 @@ func (z Zone) SoundPrograms() ([]string, error) {
 	}
 
 	return resp.Programs, nil
+}
+
+// Mute enables or disables muting of sound output for the zone.
+func (z Zone) Mute(enable bool) error {
+
+	return z.SendRequest("setMute?enable=%t", nil, enable)
+}
+
+// SetVolume will set the volume to the provided value
+func (z Zone) SetVolume(val int) error {
+
+	// TODO: Check min/max value
+
+	return z.SendRequest("setVolume?volume=%d", nil, val)
+}
+
+// SetVolumePercent sets the volume to provided percentage of max volume
+func (z Zone) SetVolumePercent(pct float32) error {
+
+	if pct < 0 || pct > 100 {
+		return errors.New("out of range value")
+	}
+
+	st, err := z.Status()
+	if err != nil {
+		return err
+	}
+
+	vol := int(st.MaxVolume * pct / 100.0)
+
+	return z.SetVolume(vol)
+}
+
+// SetVolumeIncr with increment/decrement the volume by the specified step value
+func (z Zone) SetVolumeIncr(step int) error {
+
+	var dir string
+
+	switch {
+	case step > 0:
+		dir = "up"
+	case step < 0:
+		dir = "down"
+		step *= -1 // Need to pass positive step value to API
+	default:
+		return nil
+	}
+
+	return z.SendRequest("setVolume?volume=%s&step=%d", nil, dir, step)
 }
