@@ -50,29 +50,41 @@ type ZoneStatus struct {
 	//		balance, dialogue_lift, clear_voice, subwooder_volume, bass_extension
 }
 
-func (d Device) ZoneStatus(zone string) (ZoneStatus, error) {
-
-	var resp struct {
-		ResponseCode int `json:"response_code"`
-		ZoneStatus
-	}
-
-	err := unmarshalHTTPResp(http.MethodGet, d.ControlURL+zone+"/getStatus", &resp)
-	if err != nil {
-		return ZoneStatus{}, err
-	}
-
-	return resp.ZoneStatus, nil
+type Zone struct {
+	name string
+	dev  *Device
 }
 
-func (d Device) ZoneSoundPrograms(zone string) ([]string, error) {
+func (d Device) Zone(name string) (Zone, error) {
 
-	var resp struct {
-		ResponseCode int      `json:"response_code"`
-		Programs     []string `json:"sound_program_list"`
+	// TODO: Check if name is valid for given device
+
+	return Zone{name: name, dev: &d}, nil
 	}
 
-	err := unmarshalHTTPResp(http.MethodGet, d.ControlURL+zone+"/getSoundProgramList", &resp)
+// SendRequest is a helper function for sending requests to the Zone API.
+// See Device.SendRequest() for additional information
+func (z Zone) SendRequest(path string, val interface{}, args ...interface{}) error {
+	return z.dev.SendRequest(z.name+"/"+path, val, args...)
+	}
+
+// Status returns the current status of the zone
+func (z Zone) Status() (ZoneStatus, error) {
+
+	var st ZoneStatus
+
+	err := z.SendRequest("getStatus", &st)
+	return st, err
+}
+
+// SoundPrograms returns all supported sound programs for the zone
+func (z Zone) SoundPrograms() ([]string, error) {
+
+	var resp struct {
+		Programs []string `json:"sound_program_list"`
+	}
+
+	err := z.SendRequest("/getSoundProgramList", &resp)
 	if err != nil {
 		return nil, err
 	}

@@ -1,9 +1,5 @@
 package mcast
 
-import (
-	"net/http"
-)
-
 type DeviceInfo struct {
 	ModelName         string `json:"model_name"`
 	Destination       string
@@ -23,19 +19,16 @@ type DeviceInfo struct {
 // Info returns DeviceInfo for given Device
 func (d *Device) Info() (DeviceInfo, error) {
 
-	var resp struct {
-		ResponseCode int `json:"response_code"`
-		DeviceInfo
-	}
+	var info DeviceInfo
 
-	err := unmarshalHTTPResp(http.MethodGet, d.ControlURL+"system/getDeviceInfo", &resp)
+	err := d.SendRequest("system/getDeviceInfo", &info)
 	if err != nil {
 		return DeviceInfo{}, err
 	}
 
 	// TODO: strip spaces from NetModuleVersion ?
 
-	return resp.DeviceInfo, nil
+	return info, nil
 }
 
 type Input struct {
@@ -86,8 +79,7 @@ type SystemFeatureInfo struct {
 	NumZones  uint     `json:"zone_num"`
 	Inputs    []Input  `json:"input_list"`
 }
-
-type Zone struct {
+type ZoneInfo struct {
 	ID                   string
 	ActualVolumeModeList []string    `json:"actual_volume_mode_list"`
 	CursorList           []string    `json:"cursor_list"`
@@ -106,23 +98,20 @@ type Zone struct {
 type Features struct {
 	Distribution DistributionInfo
 	System       SystemFeatureInfo
-	Zones        []Zone `json:"zone"`
+	Zones        []ZoneInfo `json:"zone"`
 }
 
 // Features returns Features struct for given Device
 func (d *Device) Features() (Features, error) {
 
-	var resp struct {
-		ResponseCode int `json:"response_code"`
-		Features
-	}
+	var feat Features
 
-	err := unmarshalHTTPResp(http.MethodGet, d.ControlURL+"system/getFeatures", &resp)
+	err := d.SendRequest("system/getFeatures", &feat)
 	if err != nil {
 		return Features{}, err
 	}
 
-	return resp.Features, nil
+	return feat, nil
 }
 
 type WirelessNet struct {
@@ -166,17 +155,14 @@ type NetworkStatus struct {
 // NetworkStatus returns configuration information about device network(s)
 func (d *Device) NetworkStatus() (NetworkStatus, error) {
 
-	var resp struct {
-		ResponseCode int `json:"response_code"`
-		NetworkStatus
-	}
+	var net NetworkStatus
 
-	err := unmarshalHTTPResp(http.MethodGet, d.ControlURL+"system/getNetworkStatus", &resp)
+	err := d.SendRequest("system/getNetworkStatus", &net)
 	if err != nil {
 		return NetworkStatus{}, err
 	}
 
-	return resp.NetworkStatus, nil
+	return net, nil
 }
 
 type Location struct {
@@ -189,15 +175,12 @@ type Location struct {
 // Location returns information about device location
 func (d *Device) Location() (Location, error) {
 
-	var resp struct {
-		ResponseCode int `json:"response_code"`
-		Location
-	}
+	var loc Location
 
-	err := unmarshalHTTPResp(http.MethodGet, d.ControlURL+"system/getLocationInfo", &resp)
+	err := d.SendRequest("system/getLocationInfo", &loc)
 	if err != nil {
 		return Location{}, err
 	}
 
-	return resp.Location, nil
+	return loc, nil
 }

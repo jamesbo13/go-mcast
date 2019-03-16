@@ -1,12 +1,8 @@
 package mcast
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"reflect"
 	"time"
 )
 
@@ -51,63 +47,6 @@ func (r responseError) Error() string {
 	if msg, ok := respErrorMsg[uint8(r)]; ok {
 		return msg
 	}
-	// TODO: map error strings to values
+
 	return fmt.Sprintf("unexpected response: %d", r)
-}
-
-// General method for handling JSON responses to HTTP requests
-func unmarshalHTTPResp(method, url string, val interface{}) error {
-
-	if url == "" {
-		return errors.New("missing url")
-	}
-
-	req, err := http.NewRequest(method, url, nil)
-	if err != nil {
-		return err
-	}
-
-	//fmt.Printf("req: %+v\n", req)
-
-	resp, err := defaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return errors.New("unexpected HTTP status: " + resp.Status)
-	}
-
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(b, &val)
-	if err != nil {
-		return err
-	}
-
-	// We expect to be passed a struct with an int ResponseCode field
-	// but verify so we don't panic during reflect calls
-	v := reflect.ValueOf(val).Elem()
-	if v.Kind() == reflect.Struct {
-		code := v.FieldByName("ResponseCode")
-		if code.IsValid() && code.Kind() == reflect.Int {
-			// Invalid value means field not found
-
-			if code.Int() != 0 {
-				return responseError(code.Int())
-			}
-
-		} else {
-			return errors.New("missing response_code field in JSON response")
-		}
-	} else {
-		panic("unexpected unmarshal value")
-	}
-
-	return nil
-
 }

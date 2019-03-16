@@ -13,7 +13,12 @@ func TestDeviceZoneStatus(t *testing.T) {
 		ControlURL: testServer.URL + "/YamahaExtendedControl/v1/",
 	}
 
-	status, err := d.ZoneStatus("main")
+	z, err := d.Zone("main")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	status, err := z.Status()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +53,12 @@ func TestDeviceZoneSoundPrograms(t *testing.T) {
 		ControlURL: testServer.URL + "/YamahaExtendedControl/v1/",
 	}
 
-	programs, err := d.ZoneSoundPrograms("main")
+	z, err := d.Zone("main")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	programs, err := z.SoundPrograms()
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,7 +1,5 @@
 package mcast
 
-import "net/http"
-
 // DistClient is a client within a distribution group
 type DistClient struct {
 	IPAddr   string `json:"ip_address"`
@@ -24,15 +22,12 @@ type Distribution struct {
 // device belongs to
 func (d Device) Distribution() (Distribution, error) {
 
-	var resp struct {
-		ResponseCode int `json:"response_code"`
-		Distribution
-	}
+	var dist Distribution
 
-	err := unmarshalHTTPResp(http.MethodGet, d.ControlURL+"dist/getDistributionInfo", &resp)
+	err := d.SendRequest("dist/getDistributionInfo", &dist)
 	if err != nil {
 		return Distribution{}, err
 	}
 
-	return resp.Distribution, nil
+	return dist, nil
 }

@@ -107,7 +107,7 @@ func TestDeviceFeatures(t *testing.T) {
 			// TODO: bluetooth
 			// TODO: web_control_url
 		},
-		Zones: []mcast.Zone{
+		Zones: []mcast.ZoneInfo{
 			{
 				ID:                   "main",
 				ActualVolumeModeList: []string{"db", "numeric"},
