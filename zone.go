@@ -62,10 +62,10 @@ func (d Device) Zone(name string) (Zone, error) {
 	return Zone{name: name, dev: &d}, nil
 }
 
-// SendRequest is a helper function for sending requests to the Zone API.
-// See Device.SendRequest() for additional information
-func (z Zone) SendRequest(path string, val interface{}, args ...interface{}) error {
-	return z.dev.SendRequest(z.name+"/"+path, val, args...)
+// GetRequest is a helper function for sending requests to the Zone API.
+// See Device.GetRequest() for additional information
+func (z Zone) GetRequest(path string, val interface{}, args ...interface{}) error {
+	return z.dev.GetRequest(z.name+"/"+path, val, args...)
 }
 
 // Status returns the current status of the zone
@@ -73,7 +73,7 @@ func (z Zone) Status() (ZoneStatus, error) {
 
 	var st ZoneStatus
 
-	err := z.SendRequest("getStatus", &st)
+	err := z.GetRequest("getStatus", &st)
 	return st, err
 }
 
@@ -84,7 +84,7 @@ func (z Zone) SoundPrograms() ([]string, error) {
 		Programs []string `json:"sound_program_list"`
 	}
 
-	err := z.SendRequest("/getSoundProgramList", &resp)
+	err := z.GetRequest("getSoundProgramList", &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (z Zone) SoundPrograms() ([]string, error) {
 // Mute enables or disables muting of sound output for the zone.
 func (z Zone) Mute(enable bool) error {
 
-	return z.SendRequest("setMute?enable=%t", nil, enable)
+	return z.GetRequest("setMute?enable=%t", nil, enable)
 }
 
 // SetVolume will set the volume to the provided value
@@ -103,7 +103,7 @@ func (z Zone) SetVolume(val int) error {
 
 	// TODO: Check min/max value
 
-	return z.SendRequest("setVolume?volume=%d", nil, val)
+	return z.GetRequest("setVolume?volume=%d", nil, val)
 }
 
 // SetVolumePercent sets the volume to provided percentage of max volume
@@ -138,5 +138,6 @@ func (z Zone) SetVolumeIncr(step int) error {
 		return nil
 	}
 
-	return z.SendRequest("setVolume?volume=%s&step=%d", nil, dir, step)
+	return z.GetRequest("setVolume?volume=%s&step=%d", nil, dir, step)
+}
 }

@@ -24,7 +24,7 @@ func (d Device) Distribution() (Distribution, error) {
 
 	var dist Distribution
 
-	err := d.SendRequest("dist/getDistributionInfo", &dist)
+	err := d.GetRequest("dist/getDistributionInfo", &dist)
 	if err != nil {
 		return Distribution{}, err
 	}

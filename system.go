@@ -21,7 +21,7 @@ func (d *Device) Info() (DeviceInfo, error) {
 
 	var info DeviceInfo
 
-	err := d.SendRequest("system/getDeviceInfo", &info)
+	err := d.GetRequest("system/getDeviceInfo", &info)
 	if err != nil {
 		return DeviceInfo{}, err
 	}
@@ -106,7 +106,7 @@ func (d *Device) Features() (Features, error) {
 
 	var feat Features
 
-	err := d.SendRequest("system/getFeatures", &feat)
+	err := d.GetRequest("system/getFeatures", &feat)
 	if err != nil {
 		return Features{}, err
 	}
@@ -157,7 +157,7 @@ func (d *Device) NetworkStatus() (NetworkStatus, error) {
 
 	var net NetworkStatus
 
-	err := d.SendRequest("system/getNetworkStatus", &net)
+	err := d.GetRequest("system/getNetworkStatus", &net)
 	if err != nil {
 		return NetworkStatus{}, err
 	}
@@ -177,7 +177,7 @@ func (d *Device) Location() (Location, error) {
 
 	var loc Location
 
-	err := d.SendRequest("system/getLocationInfo", &loc)
+	err := d.GetRequest("system/getLocationInfo", &loc)
 	if err != nil {
 		return Location{}, err
 	}

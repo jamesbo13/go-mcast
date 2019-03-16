@@ -4,9 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 )
+
+const (
+	defaultControlURL string = "YamahaExtendedControl/v1/"
+)
+
+// TODO - fields in Device are taken from desc.xml fields ... but are they what we need?
 
 // Device is a remotely controllable MusicCast device
 // (eg. speaker or A/V receiver)
@@ -29,21 +36,48 @@ type responseCode struct {
 	Code int `json:"response_code"`
 }
 
-// SendRequest sends request to device using path as trailing part of URL. val
+// GetRequest sends request to device using path as trailing part of URL. val
 // contains any (optional) returned values from the response (decoded from JSON)
 // args are any optional arguments to path if it is a printf style format string.
-func (d Device) SendRequest(path string, val interface{}, args ...interface{}) error {
+func (d Device) GetRequest(path string, val interface{}, args ...interface{}) error {
+	return d.sendRequest(http.MethodGet, path, val, nil, args...)
+}
 
-	url := fmt.Sprintf(d.ControlURL+path, args...)
+func (d Device) PostRequest(path string, body io.ReadCloser, args ...interface{}) error {
+
+	return nil
+}
+
+func (d Device) sendRequest(method, path string, val interface{}, body io.ReadCloser, args ...interface{}) error {
+
+	var baseURL string
+
+	// Use default ControlURL if not defined
+	if d.ControlURL == "" {
+		if d.Address == "" {
+			return errors.New("Device has no defined address")
+		}
+
+		baseURL = fmt.Sprintf("http://%s/%s", d.Address, defaultControlURL)
+	} else {
+		baseURL = d.ControlURL
+	}
+
+	url := fmt.Sprintf(baseURL+path, args...)
 	if url == "" {
 		return errors.New("missing url")
 	}
 
 	//fmt.Println("URL: " + url)
 
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		return err
+	}
+
+	if body != nil {
+		req.Body = body
+		req.Header.Set("Content-Type", "application/x-www-form-encoded")
 	}
 
 	//fmt.Println(req)
