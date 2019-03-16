@@ -25,9 +25,9 @@ func TestDeviceDistribution(t *testing.T) {
 		Status:     "working",
 		ServerZone: "main",
 		Clients: []mcast.DistClient{
-			{"10.13.1.152", "base"},
-			{"10.13.1.153", "base"},
-			{"10.13.1.154", "base"},
+			{IPAddr: "10.13.1.152", DataType: "base"},
+			{IPAddr: "10.13.1.153", DataType: "base"},
+			{IPAddr: "10.13.1.154", DataType: "base"},
 		},
 		AudioDropout: false,
 	}
