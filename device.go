@@ -79,7 +79,7 @@ func (d Device) sendRequest(method, path string, val interface{}, body io.Reader
 		req.Header.Set("Content-Type", "application/x-www-form-encoded")
 	}
 
-	fmt.Println(req)
+	//fmt.Println(req)
 	resp, err := defaultClient.Do(req)
 	if err != nil {
 		return err
