@@ -43,12 +43,12 @@ func (d Device) GetRequest(path string, val interface{}, args ...interface{}) er
 	return d.sendRequest(http.MethodGet, path, val, nil, args...)
 }
 
-func (d Device) PostRequest(path string, body io.ReadCloser, args ...interface{}) error {
+func (d Device) PostRequest(path string, body io.Reader, args ...interface{}) error {
 
-	return nil
+	return d.sendRequest(http.MethodPost, path, nil, body, args...)
 }
 
-func (d Device) sendRequest(method, path string, val interface{}, body io.ReadCloser, args ...interface{}) error {
+func (d Device) sendRequest(method, path string, val interface{}, body io.Reader, args ...interface{}) error {
 
 	var baseURL string
 
@@ -70,17 +70,16 @@ func (d Device) sendRequest(method, path string, val interface{}, body io.ReadCl
 
 	//fmt.Println("URL: " + url)
 
-	req, err := http.NewRequest(method, url, nil)
+	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return err
 	}
 
 	if body != nil {
-		req.Body = body
 		req.Header.Set("Content-Type", "application/x-www-form-encoded")
 	}
 
-	//fmt.Println(req)
+	fmt.Println(req)
 	resp, err := defaultClient.Do(req)
 	if err != nil {
 		return err
