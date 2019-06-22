@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -131,13 +132,34 @@ func deviceInfo(urlStr string) (Device, error) {
 	return d, nil
 }
 
+// Hack to get local IP address.
+func getLocalAddr() (string, error) {
+	conn, err := net.Dial("udp", "224.0.0.251:5353")
+	if err != nil {
+		return "", err
+	}
+
+	s := conn.LocalAddr().String()
+
+	// strip off :port from address
+	return s[:strings.Index(s, ":")], nil
+}
+
 // Discover returns all MusicCast devices that can be found on local network.
 // Uses SSDP (Simple Service Discovery Protocol) to find appropriate hosts
 func Discover() ([]Device, error) {
 
 	var ret []Device
 
-	devs, err := ssdp.Search(upnpDevName, 2, "")
+	// TODO: If we pass no address this can fail because other programs are listening
+	//       for mcast traffic on same addr/port. Set to local IP Address to get to work.
+	localAddr, err := getLocalAddr()
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println(localAddr)
+	devs, err := ssdp.Search(upnpDevName, 2, localAddr+":0")
 	if err != nil {
 		return nil, err
 	}
@@ -153,4 +175,11 @@ func Discover() ([]Device, error) {
 	}
 
 	return ret, nil
+}
+
+func Ping(addr string) (Device, error) {
+
+	URL := "http://" + addr + ":49154/MediaRenderer/desc.xml"
+
+	return deviceInfo(URL)
 }
